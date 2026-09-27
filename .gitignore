@@ -1,0 +1,18 @@
+# C# / .NET
+bin/
+obj/
+*.dll
+
+# Node.js / Angular
+node_modules/
+dist/
+.angular/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Docker & Sistema
+*.log
+.DS_Store

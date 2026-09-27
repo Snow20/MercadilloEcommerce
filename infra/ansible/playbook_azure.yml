@@ -1,0 +1,24 @@
+---
+- name: Preparar y Desplegar Aplicación en Azure AKS
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Verificación de conexión con AKS
+      command: kubectl cluster-info
+      register: aks_status
+
+    - name: Imprimir estado de AKS
+      debug:
+        msg: "{{ aks_status.stdout }}"
+
+    - name: Crear Namespace e-commerce feira
+      kubernetes.core.k8s:
+        name: feira-ecom
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Aplicar manifiestos K8s (.NET API, Angular, Worker ServiceNow, RabbitMQ)
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', '../k8s/azure-manifest.yaml') }}"

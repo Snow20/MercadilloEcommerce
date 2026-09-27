@@ -1,0 +1,427 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700;900&display=swap');
+
+/* ==========================================================================
+   1. SISTEMA DE DISEÑO E IDENTIDAD VISUAL (TOKENS DE COLOR & TIPOGRAFÍA)
+   ========================================================================== */
+:root {
+  /* Tokens Cromáticos */
+  --color-bg-main: #F9F8F6;          /* Lino / Hueso cálido orgánico */
+  --color-primary: #0A2540;          /* Azul Mariño Profundo */
+  --color-terracota: #C85A32;        /* Terracota / Tello */
+  --color-cta: #2D6A4F;              /* Verde Orgánico Acción Principal */
+  --color-cta-hover: #1B4332;        /* Verde Orgánico Hover */
+  --color-text-secondary: #6B7280;   /* Gris Secundario / Auxiliar */
+  --color-focus: #80BFFF;            /* Azul Foco Anillo Accesibilidad */
+  --color-white: #FFFFFF;
+  --color-border: #E5E7EB;
+
+  /* Tipografías */
+  --font-family-base: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-family-heading: 'Cinzel', serif;
+
+  /* Sombras y Radios */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 3px rgba(10, 37, 64, 0.05);
+  --shadow-md: 0 4px 12px rgba(10, 37, 64, 0.08);
+  --shadow-lg: 0 10px 25px rgba(10, 37, 64, 0.12);
+}
+
+/* ==========================================================================
+   ESTILOS BASE Y ACCESIBILIDAD GLOBAL
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg-main);
+  color: var(--color-primary);
+  font-family: var(--font-family-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Regla Global de Enfoque y Accesibilidad (WCAG) */
+*:focus-visible {
+  outline: 3px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+h1, h2, h3, h4, .heading-feira {
+  color: var(--color-primary);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   2. ESTRUCTURA Y COMPONENTES DE INTERFAZ
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   A. Cabecera (Header de la Feira)
+   -------------------------------------------------------------------------- */
+
+/* Barra Superior de Avisos */
+.top-bar-announcement {
+  background-color: var(--color-terracota);
+  color: var(--color-white);
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Header Principal */
+.header-feira {
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-container h1 {
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
+}
+
+.logo-badge {
+  background-color: var(--color-terracota);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+/* Barra de Filtros Rápidos (Categorías Horizontal) */
+.categories-filter-bar {
+  display: flex;
+  gap: 10px;
+  padding: 1rem 2rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  scrollbar-width: thin;
+}
+
+.category-chip {
+  background-color: var(--color-bg-main);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-chip:hover, .category-chip.active {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   B. Sección Destacada (Hero Banner)
+   -------------------------------------------------------------------------- */
+.hero-section {
+  position: relative;
+  border-radius: var(--radius-lg);
+  margin: 2rem auto 0 auto;
+  max-width: 1200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(10, 37, 64, 0.82), rgba(10, 37, 64, 0.65)),
+              url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+  padding: 4rem 2.5rem;
+  color: var(--color-white);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  color: var(--color-white);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: #E5E7EB;
+  max-width: 640px;
+  margin-bottom: 2rem;
+  font-weight: 400;
+}
+
+.btn-hero-cta {
+  background-color: var(--color-terracota);
+  color: var(--color-white);
+  border: none;
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-hero-cta:hover {
+  background-color: #A84522;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* --------------------------------------------------------------------------
+   C. Tarjetas de Producto o Puesto (Grid de Productos)
+   -------------------------------------------------------------------------- */
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.section-title {
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--color-terracota);
+  border-radius: 2px;
+}
+
+.grid-productos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2rem;
+}
+
+.card-feira {
+  position: relative;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Microinteracciones Hover */
+.card-feira:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: #D1D5DB;
+}
+
+/* Imagen Superior y Badge de Origen */
+.card-img-placeholder {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-color: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  border-radius: 12px 12px 0 0;
+}
+
+.card-badge-origen {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background-color: var(--color-terracota);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Cuerpo de la Tarjeta */
+.card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-title {
+  font-family: var(--font-family-base);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.25rem;
+}
+
+.card-producer {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.card-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.card-price {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 1.25rem;
+}
+
+/* Botones de Acción */
+.card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-feira-primary {
+  width: 100%;
+  background-color: var(--color-cta);
+  color: var(--color-white);
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-feira-primary:hover {
+  background-color: var(--color-cta-hover);
+}
+
+.btn-feira-secondary {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-feira-secondary:hover {
+  background-color: #F3F4F6;
+  color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   D. Pie de Página (Footer de la Feira)
+   -------------------------------------------------------------------------- */
+.footer-feira {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 3rem 2rem 1.5rem 2rem;
+  margin-top: 4rem;
+  border-top: 3px solid var(--color-terracota);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-brand {
+  max-width: 400px;
+}
+
+.footer-brand h3 {
+  color: var(--color-white);
+  font-size: 1.25rem;
+}
+
+.footer-description {
+  color: #9CA3AF;
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+
+.footer-links h4 {
+  color: var(--color-white);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-family-base);
+}
+
+.footer-links ul {
+  list-style: none;
+}
+
+.footer-links li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+  color: #9CA3AF;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--color-white);
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 1.5rem auto 0 auto;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #9CA3AF;
+}
+
+.footer-bottom strong {
+  color: var(--color-white);
+}
