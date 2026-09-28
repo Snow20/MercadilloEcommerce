@@ -79,6 +79,9 @@ interface Producto {
                 <select #gatewaySelect class="select-gateway-feira">
                   <option value="Stripe">💳 Stripe</option>
                   <option value="PayPal">🅿️ PayPal</option>
+                  <option value="Abanca">🏦 Abanca (Redsys TPV)</option>
+                  <option value="Santander">🔴 Banco Santander</option>
+                  <option value="Wise">🌐 Wise Transfer</option>
                 </select>
 
                 <div class="card-actions">
@@ -299,9 +302,9 @@ export class AppComponent implements OnInit {
   }
 
   private obtenerIcono(id: number): string {
-    const iconos: Record<number, string> = { 
-      1: '🐙', 2: '🧀', 3: '🥧', 4: '🍾', 5: '🥧', 
-      6: '🦪', 7: '🥖', 8: '☕', 9: '🫑', 10: '🍯' 
+    const iconos: Record<number, string> = {
+      1: '🐙', 2: '🧀', 3: '🥧', 4: '🍾', 5: '🥧',
+      6: '🦪', 7: '🥖', 8: '☕', 9: '🫑', 10: '🍯'
     };
     return iconos[id] || '🛒';
   }

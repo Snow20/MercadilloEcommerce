@@ -63,6 +63,9 @@ builder.Services.AddSwaggerGen();
 // Registrar servicios de las pasarelas de pago y la factoría
 builder.Services.AddScoped<IPaymentGatewayService, StripePaymentService>();
 builder.Services.AddScoped<IPaymentGatewayService, PaypalPaymentService>();
+builder.Services.AddScoped<IPaymentGatewayService, AbancaPaymentService>();
+builder.Services.AddScoped<IPaymentGatewayService, SantanderPaymentService>();
+builder.Services.AddScoped<IPaymentGatewayService, WisePaymentService>();
 builder.Services.AddScoped<PaymentGatewayFactory>();
 
 // LEER DIRECTAMENTE DESDE LA CONFIGURACIÓN DE APPSETTINGS O ENV VARS
