@@ -73,12 +73,24 @@ interface Producto {
               <p class="card-producer">Feirante Tradicional · Galicia</p>
               <p class="card-description">{{ prod.descripcion }}</p>
               <div class="card-price">{{ prod.precio | currency:'EUR':'symbol':'1.2-2' }}</div>
-              <div class="card-actions">
-                <button class="btn-feira-primary" (click)="procesarPago(prod)">💳 {{ t().btnBuy }}</button>
-                <button class="btn-feira-secondary" (click)="reportarIncidencia(prod)" title="Notificar a ServiceNow">
-                  {{ t().btnAlert }}
-                </button>
+              
+              <!-- SELECTOR DE PASARELA Y ACCIONES DE PAGO -->
+              <div class="card-actions-wrapper">
+                <select #gatewaySelect class="select-gateway-feira">
+                  <option value="Stripe">💳 Stripe</option>
+                  <option value="PayPal">🅿️ PayPal</option>
+                </select>
+
+                <div class="card-actions">
+                  <button class="btn-feira-primary" (click)="procesarPagoMultiPasarela(prod, gatewaySelect.value)">
+                    {{ t().btnBuy }}
+                  </button>
+                  <button class="btn-feira-secondary" (click)="reportarIncidencia(prod)" title="Notificar a ServiceNow">
+                    {{ t().btnAlert }}
+                  </button>
+                </div>
               </div>
+
             </div>
           </article>
         }
@@ -108,7 +120,26 @@ interface Producto {
         <p>&copy; 2026 <strong>Fenrirsoft</strong>. {{ t().rights }}</p>
       </div>
     </footer>
-  `
+  `,
+  styles: [`
+    .card-actions-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+    .select-gateway-feira {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #F8FAFC;
+      color: #0A2540;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  `]
 })
 export class AppComponent implements OnInit {
   private http = inject(HttpClient);
@@ -116,17 +147,17 @@ export class AppComponent implements OnInit {
   idiomaActual = signal<Language>('gl');
   productos = signal<Producto[]>([]);
 
-  async procesarPago(prod: Producto) {
+  // Procesa el pago conectando al endpoint unificado multi-pasarela de .NET 9
+  async procesarPagoMultiPasarela(prod: Producto, pasarela: string) {
     const payload = {
       productId: prod.id,
       productName: prod.nombre,
-      price: prod.precio
+      price: prod.precio,
+      provider: pasarela
     };
 
-    // 1. Solicita la sesión de pago a la API de .NET
-    this.http.post<{ sessionId: string, url: string }>('/api/payment/create-checkout-session', payload).subscribe({
+    this.http.post<{ sessionId?: string, url: string }>('/api/payment/checkout', payload).subscribe({
       next: (res) => {
-        // 2. Redirige al cliente a la pasarela segura de Stripe
         if (res.url) {
           window.location.href = res.url;
         } else {
@@ -135,9 +166,14 @@ export class AppComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al procesar el pago:', err);
-        alert('Erro ao conectar coa pasarela de pago.');
+        alert(err.error?.error || 'Erro ao conectar coa pasarela de pago.');
       }
     });
+  }
+
+  // Mantiene compatibilidad con el método previo
+  async procesarPago(prod: Producto) {
+    await this.procesarPagoMultiPasarela(prod, 'Stripe');
   }
 
   private traducciones = {
@@ -148,7 +184,7 @@ export class AppComponent implements OnInit {
       heroSubtitle: 'Os mellores produtos artesanais e gastronómicos directamente dos produtores locais de Galicia.',
       btnHero: 'Explorar Puestos',
       sectionTitle: 'Produtos Destacados da Feira',
-      btnBuy: 'Pagar con Stripe',
+      btnBuy: 'Pagar',
       btnAlert: 'Alerta',
       footerDesc: 'Plataforma dixital para a promoción do comercio local e os produtos artesanais de Galicia.',
       footerLinksTitle: 'Navegación',
@@ -164,7 +200,7 @@ export class AppComponent implements OnInit {
       heroSubtitle: 'Los mejores productos artesanales y gastronómicos directamente de los productores locales de Galicia.',
       btnHero: 'Explorar Puestos',
       sectionTitle: 'Productos Destacados del Mercadillo',
-      btnBuy: 'Pagar con Stripe',
+      btnBuy: 'Pagar',
       btnAlert: 'Alerta',
       footerDesc: 'Plataforma digital para la promoción del comercio local y los productos artesanales de Galicia.',
       footerLinksTitle: 'Navegación',
@@ -180,7 +216,7 @@ export class AppComponent implements OnInit {
       heroSubtitle: 'The finest artisanal and gastronomic products directly from local Galician producers.',
       btnHero: 'Explore Stalls',
       sectionTitle: 'Featured Market Products',
-      btnBuy: 'Pay with Stripe',
+      btnBuy: 'Pay',
       btnAlert: 'Alert',
       footerDesc: 'Digital platform for the promotion of local trade and Galician artisanal products.',
       footerLinksTitle: 'Navigation',
@@ -238,10 +274,8 @@ export class AppComponent implements OnInit {
       price: prod.precio
     };
 
-    // Petición HTTP POST real al Backend .NET a través del proxy NGINX
     this.http.post<{ message: string }>('/api/cart', payload).subscribe({
       next: (res) => {
-        // Respuesta confirmada desde la API C# de .NET 9
         alert(`[Backend .NET 9 OK]: ${res.message}`);
       },
       error: (err) => {

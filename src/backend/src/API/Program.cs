@@ -1,11 +1,24 @@
 using System.Text;
+using EcommerceApi.Services;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Stripe;
 using Stripe.Checkout;
 
-var builder = WebApplication.CreateBuilder(args);
+var builderOptions = new WebApplicationOptions
+{
+    Args = args
+};
+
+var builder = WebApplication.CreateBuilder(builderOptions);
+
+// Desactivar el reloadOnChange para evitar agotar instancias inotify
+builder.Configuration.Sources.Clear();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false)
+    .AddEnvironmentVariables();
 
 // Configuración de JWT
 var jwtSecretKey = builder.Configuration["Jwt:Secret"] ?? "SuperSecretKeyGaliciaFeiraEnterprise2026!";
@@ -42,12 +55,23 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Inicializar cliente de Stripe con Secret Key desde appsettings o fallback
-StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"] ?? "sk_test_51...tu_clave_aqui";
+// Registrar servicios de las pasarelas de pago y la factoría
+builder.Services.AddScoped<IPaymentGatewayService, StripePaymentService>();
+builder.Services.AddScoped<IPaymentGatewayService, PaypalPaymentService>();
+builder.Services.AddScoped<PaymentGatewayFactory>();
+
+// LEER DIRECTAMENTE DESDE LA CONFIGURACIÓN DE APPSETTINGS O ENV VARS
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+if (string.IsNullOrEmpty(stripeSecretKey))
+{
+    stripeSecretKey = "sk_test_51UKcUGHBWzHjh2BOQoLwKQC5v2AJEXGFjaI2ssHrtSnv9lgeLdOkK2nnCNrB2U6JHaN6OT7qQzOQL5cbMfmENySh00WIgtKYi2";
+}
+StripeConfiguration.ApiKey = stripeSecretKey;
 
 var app = builder.Build();
 
@@ -101,40 +125,29 @@ app.MapPost("/api/cart", (CartItemRequest request) =>
     });
 });
 
-// RUTA 4: Endpoint para iniciar el proceso de pago con Stripe Checkout
-app.MapPost("/api/payment/create-checkout-session", async (CheckoutRequest request) =>
+// RUTA 4: Endpoint Unificado Multi-Pasarela (Stripe, PayPal)
+app.MapPost("/api/payment/checkout", async (CheckoutPaymentRequest request, PaymentGatewayFactory factory) =>
 {
-    var domain = "http://localhost";
-
-    var options = new SessionCreateOptions
+    try
     {
-        PaymentMethodTypes = new List<string> { "card" },
-        LineItems = new List<SessionLineItemOptions>
-        {
-            new SessionLineItemOptions
-            {
-                PriceData = new SessionLineItemPriceDataOptions
-                {
-                    UnitAmount = (long)(request.Price * 100),
-                    Currency = "eur",
-                    ProductData = new SessionLineItemPriceDataProductDataOptions
-                    {
-                        Name = request.ProductName,
-                        Description = "Produto artesanal da Feira Gallega"
-                    },
-                },
-                Quantity = 1,
-            },
-        },
-        Mode = "payment",
-        SuccessUrl = domain + "/?status=success",
-        CancelUrl = domain + "/?status=cancel",
-    };
+        var provider = string.IsNullOrWhiteSpace(request.Provider) ? "Stripe" : request.Provider;
+        var paymentService = factory.GetService(provider);
+        var response = await paymentService.CreatePaymentSessionAsync(new CheckoutRequest(request.ProductId, request.ProductName, request.Price));
+        
+        return Results.Ok(response);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
 
-    var service = new SessionService();
-    Session session = await service.CreateAsync(options);
-
-    return Results.Ok(new { sessionId = session.Id, url = session.Url });
+// RUTA 4 (COMPATIBILIDAD): Endpoint legado para procesar pagos con Stripe Checkout
+app.MapPost("/api/payment/create-checkout-session", async (CheckoutRequest request, PaymentGatewayFactory factory) =>
+{
+    var paymentService = factory.GetService("Stripe");
+    var response = await paymentService.CreatePaymentSessionAsync(request);
+    return Results.Ok(new { sessionId = response.SessionId, url = response.Url });
 });
 
 // RUTA 5: Webhook de confirmación de Stripe
@@ -167,16 +180,6 @@ app.MapPost("/api/payment/webhook", async (HttpRequest req) =>
     }
 });
 
-
-// LEER DIRECTAMENTE DESDE LA CONFIGURACIÓN DE APPSETTINGS
-var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
-if (string.IsNullOrEmpty(stripeSecretKey))
-{
-    throw new Exception("A clave secreta de Stripe non está configurada en appsettings.json.");
-}
-StripeConfiguration.ApiKey = stripeSecretKey;
-
-// app.Run() CIERRA LAS TOP-LEVEL STATEMENTS
 app.Run();
 
 // -------------------------------------------------------------
@@ -185,4 +188,4 @@ app.Run();
 public record CartItemRequest(int ProductId, string ProductName, decimal Price);
 public record IncidentRequest(string Title, string Description, string Severity);
 public record IncidentAlertEvent(string Title, string Description, string Severity);
-public record CheckoutRequest(int ProductId, string ProductName, decimal Price);
+public record CheckoutPaymentRequest(int ProductId, string ProductName, decimal Price, string Provider);
