@@ -34,6 +34,10 @@ services:
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=guest
       - RabbitMQ__Password=guest
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Stripe__SecretKey=sk_test_51UKcUGHBWzHjh2BOQoLwKQC5v2AJEXGFjaI2ssHrtSnv9lgeLdOkK2nnCNrB2U6JHaN6OT7qQzOQL5cbMfmENySh00WIgtKYi2
+      - Stripe__PublishableKey=pk_test_51UKcUGHBWzHjh2BONhnLJc0R4VvZiBhrnUUa5IHzE7i09TSNNX69AxrRxnwDGUkfSJf65whNwyAuer5nX6gYdpi1006RfdF28n
+      - Stripe__WebhookSecret=whsec_58b86c79697f53373cf8a86773726fe16e2f42a9e03a74da02666116432b40af
     ports:
       - "5000:8080"
     depends_on:

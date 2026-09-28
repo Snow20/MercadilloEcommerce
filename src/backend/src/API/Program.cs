@@ -2,6 +2,8 @@ using System.Text;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Stripe;
+using Stripe.Checkout;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,9 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Inicializar cliente de Stripe con Secret Key desde appsettings o fallback
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"] ?? "sk_test_51...tu_clave_aqui";
 
 var app = builder.Build();
 
@@ -96,6 +101,81 @@ app.MapPost("/api/cart", (CartItemRequest request) =>
     });
 });
 
+// RUTA 4: Endpoint para iniciar el proceso de pago con Stripe Checkout
+app.MapPost("/api/payment/create-checkout-session", async (CheckoutRequest request) =>
+{
+    var domain = "http://localhost";
+
+    var options = new SessionCreateOptions
+    {
+        PaymentMethodTypes = new List<string> { "card" },
+        LineItems = new List<SessionLineItemOptions>
+        {
+            new SessionLineItemOptions
+            {
+                PriceData = new SessionLineItemPriceDataOptions
+                {
+                    UnitAmount = (long)(request.Price * 100),
+                    Currency = "eur",
+                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = request.ProductName,
+                        Description = "Produto artesanal da Feira Gallega"
+                    },
+                },
+                Quantity = 1,
+            },
+        },
+        Mode = "payment",
+        SuccessUrl = domain + "/?status=success",
+        CancelUrl = domain + "/?status=cancel",
+    };
+
+    var service = new SessionService();
+    Session session = await service.CreateAsync(options);
+
+    return Results.Ok(new { sessionId = session.Id, url = session.Url });
+});
+
+// RUTA 5: Webhook de confirmación de Stripe
+app.MapPost("/api/payment/webhook", async (HttpRequest req) =>
+{
+    var json = await new StreamReader(req.Body).ReadToEndAsync();
+    var webhookSecret = builder.Configuration["Stripe:WebhookSecret"];
+
+    try
+    {
+        var stripeEvent = EventUtility.ConstructEvent(
+            json,
+            req.Headers["Stripe-Signature"],
+            webhookSecret,
+            throwOnApiVersionMismatch: false
+        );
+
+        if (stripeEvent.Type == Events.CheckoutSessionCompleted)
+        {
+            var session = stripeEvent.Data.Object as Session;
+            Console.WriteLine($"[Stripe Webhook OK]: Pago confirmado para la sesión {session?.Id}");
+        }
+
+        return Results.Ok();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Stripe Webhook Error]: {ex.Message}");
+        return Results.BadRequest();
+    }
+});
+
+
+// LEER DIRECTAMENTE DESDE LA CONFIGURACIÓN DE APPSETTINGS
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+if (string.IsNullOrEmpty(stripeSecretKey))
+{
+    throw new Exception("A clave secreta de Stripe non está configurada en appsettings.json.");
+}
+StripeConfiguration.ApiKey = stripeSecretKey;
+
 // app.Run() CIERRA LAS TOP-LEVEL STATEMENTS
 app.Run();
 
@@ -105,3 +185,4 @@ app.Run();
 public record CartItemRequest(int ProductId, string ProductName, decimal Price);
 public record IncidentRequest(string Title, string Description, string Severity);
 public record IncidentAlertEvent(string Title, string Description, string Severity);
+public record CheckoutRequest(int ProductId, string ProductName, decimal Price);

@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { LanguageSwitcherComponent, Language } from './app/components/language-switcher/language-switcher.component';
+import { loadStripe } from '@stripe/stripe-js';
 
 interface ProductoAPI {
   id: number;
@@ -73,7 +74,7 @@ interface Producto {
               <p class="card-description">{{ prod.descripcion }}</p>
               <div class="card-price">{{ prod.precio | currency:'EUR':'symbol':'1.2-2' }}</div>
               <div class="card-actions">
-                <button class="btn-feira-primary" (click)="agregarAlCarrito(prod)">{{ t().btnBuy }}</button>
+                <button class="btn-feira-primary" (click)="procesarPago(prod)">💳 {{ t().btnBuy }}</button>
                 <button class="btn-feira-secondary" (click)="reportarIncidencia(prod)" title="Notificar a ServiceNow">
                   {{ t().btnAlert }}
                 </button>
@@ -115,7 +116,31 @@ export class AppComponent implements OnInit {
   idiomaActual = signal<Language>('gl');
   productos = signal<Producto[]>([]);
 
-private traducciones = {
+  async procesarPago(prod: Producto) {
+    const payload = {
+      productId: prod.id,
+      productName: prod.nombre,
+      price: prod.precio
+    };
+
+    // 1. Solicita la sesión de pago a la API de .NET
+    this.http.post<{ sessionId: string, url: string }>('/api/payment/create-checkout-session', payload).subscribe({
+      next: (res) => {
+        // 2. Redirige al cliente a la pasarela segura de Stripe
+        if (res.url) {
+          window.location.href = res.url;
+        } else {
+          alert('Erro ao obter a URL da pasarela de pago.');
+        }
+      },
+      error: (err) => {
+        console.error('Error al procesar el pago:', err);
+        alert('Erro ao conectar coa pasarela de pago.');
+      }
+    });
+  }
+
+  private traducciones = {
     gl: {
       announcement: 'Próxima Feira Local: Este Sábado no Mercado Tradicional',
       title: 'Feira Gallega Enterprise',
@@ -123,7 +148,7 @@ private traducciones = {
       heroSubtitle: 'Os mellores produtos artesanais e gastronómicos directamente dos produtores locais de Galicia.',
       btnHero: 'Explorar Puestos',
       sectionTitle: 'Produtos Destacados da Feira',
-      btnBuy: 'Engadir ao carro',
+      btnBuy: 'Pagar con Stripe',
       btnAlert: 'Alerta',
       footerDesc: 'Plataforma dixital para a promoción do comercio local e os produtos artesanais de Galicia.',
       footerLinksTitle: 'Navegación',
@@ -139,7 +164,7 @@ private traducciones = {
       heroSubtitle: 'Los mejores productos artesanales y gastronómicos directamente de los productores locales de Galicia.',
       btnHero: 'Explorar Puestos',
       sectionTitle: 'Productos Destacados del Mercadillo',
-      btnBuy: 'Añadir al carrito',
+      btnBuy: 'Pagar con Stripe',
       btnAlert: 'Alerta',
       footerDesc: 'Plataforma digital para la promoción del comercio local y los productos artesanales de Galicia.',
       footerLinksTitle: 'Navegación',
@@ -155,7 +180,7 @@ private traducciones = {
       heroSubtitle: 'The finest artisanal and gastronomic products directly from local Galician producers.',
       btnHero: 'Explore Stalls',
       sectionTitle: 'Featured Market Products',
-      btnBuy: 'Add to cart',
+      btnBuy: 'Pay with Stripe',
       btnAlert: 'Alert',
       footerDesc: 'Digital platform for the promotion of local trade and Galician artisanal products.',
       footerLinksTitle: 'Navigation',
